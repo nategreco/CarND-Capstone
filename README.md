@@ -4,6 +4,16 @@
 
 ---
 
+**Team Members**
+
+| Name | Email |
+| --- |:---:|
+| Nathan Greco | nathan.greco@gmail.com |
+| Charles Faivre | chuck@ratsnestinc.com |
+| John Novotny | john.novotny@gmail.com |
+| Mohamed Hussien | eng.mohamedhussien1991@gmail.com |
+| Virendra Kumar Anand | vkanand1976@gmail.com |
+
 **Capstone Project Task List**
 
 | **Filename** | **Owner** |
