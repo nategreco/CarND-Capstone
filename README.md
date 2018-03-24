@@ -20,15 +20,12 @@
 
 The goals / steps of this project are the following:
 
-* Develop the following ROS Nodes
- * Waypoint Updater Node (Partial)
- * DBW Node
- * Traffic Light Detection Node
- * Waypoint Updater Node (Full)
-* Succesfully navigate the Udacity Simulator in the following conditions
- * Highway
- * Test lot
-* Run the package on an actual car
+* Smoothly follow waypoints in the simulator.
+* Respect the target top speed set for the waypoints' 'twist.twist.linear.x' in 'waypoint_loader.py'. Be sure to check that this is working by testing with different values for kph velocity parameter in '/ros/src/waypoint_loader/launch/waypoint_loader.launch'. If your vehicle adheres to the kph target top speed set here, then you have satisfied this requirement.
+* Stop at traffic lights when needed.
+* Stop and restart PID controllers depending on the state of '/vehicle/dbw_enabled'.
+* Publish throttle, steering, and brake commands at 50hz.
+* Launch correctly using the launch files provided in the capstone repo. **Please note that we will not be able to accomodate special launch instructions or run additional scripts from your submission to download files.** The 'launch/styx.launch' and 'launch/site.launch' files will be used to test code in the simulator and on the vehicle respectively. The submission size limit for this project has been increased to 2GB.
 
 [//]: # (Image References)
 
