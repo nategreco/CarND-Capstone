@@ -4,9 +4,10 @@
 
 ---
 
-**Capston Project Task List**
-| Filename | Owner |
-|---|:---:|
+**Capstone Project Task List**
+
+| **Filename** | **Owner** |
+| --- |:---:|
 | tl_classifier.py | Virendra Kumar Anand |
 | tl_detector.py | Mohamed Hussien |
 | dbw_node.py | John Novotny |
