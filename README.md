@@ -22,8 +22,7 @@
 | tl_detector.py | Mohamed Hussien |
 | dbw_node.py | John Novotny |
 | twist_controler.py | John Novotny |
-| waypoint_updater.py | Charles Faivre |
-| waypoint_loader.py | Nathan Greco |
+| waypoint_updater.py | Nathan Greco & Charles Faivre |
 | README.md | Nathan Greco |
 
 **Capstone Project Goals**

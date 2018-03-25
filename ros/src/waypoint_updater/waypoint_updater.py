@@ -3,6 +3,7 @@
 import rospy
 from geometry_msgs.msg import PoseStamped
 from styx_msgs.msg import Lane, Waypoint
+from std_msgs.msg import Int32
 
 import math
 
@@ -42,7 +43,7 @@ class WaypointUpdater(object):
         self.base_waypoints = None
         self.traffic_waypoint = None
         self.obstacle_waypoint = None # Future
-        self.frame_id
+        self.frame_id = None
         
         # Other member variables
         rate = rospy.Rate(LOOP_RATE)
@@ -51,7 +52,7 @@ class WaypointUpdater(object):
         while not start_time:
             start_time = rospy.Time.now().to_sec()
 
-        while not rospy.is_shutdown():current_pose
+        while not rospy.is_shutdown():
             if self.current_pose is None or self.base_waypoints is None or self.frame_id is None:
                 continue
             self.final_waypoints_pub.publish(get_waypoints())
