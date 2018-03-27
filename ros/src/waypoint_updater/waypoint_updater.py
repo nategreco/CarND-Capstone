@@ -6,6 +6,7 @@ from styx_msgs.msg import Lane, Waypoint
 from std_msgs.msg import Int32
 
 import math
+import tf
 
 '''
 This node will publish waypoints from the car's current position to some `x` distance ahead.
@@ -22,8 +23,8 @@ as well as to verify your TL classifier.
 TODO (for Yousuf and Aaron): Stopline location for each traffic light.
 '''
 
-LOOKAHEAD_WPS = 200         # waypoints
-LOOP_RATE = 2               # hz
+LOOKAHEAD_WPS = 100         # waypoints
+LOOP_RATE = 1               # hz
 MAX_SPD = 20.0 * 0.44704    # m/s
 ACCEL = 1.0                 # m/s^2
 DECEL = 1.0                 # m/s^2
@@ -103,8 +104,14 @@ class WaypointUpdater(object):
         return dist
 
     def check_waypoint_behind(self, pose, waypoint):
-        # TODO - Do I even need this?
-        return False
+        # Transform waypoint to car coordinates
+        tf.transformations.euler_from_quaternion([pose.orientation.x,
+                                                  pose.orientation.y,
+                                                  pose.orientation.z,
+                                                  pose.orientation.w])
+        
+        # Now check if waypoint is ahead or behind
+        return ((waypoint.pose.pose.position.x - pose.position.x) < 0)
     
     def get_nearest_waypoint(self, pose, waypoints):
         # Find index of nearest waypoint ahead of vehicle
