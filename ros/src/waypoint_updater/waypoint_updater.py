@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import rospy
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped, TwistStamped
 from styx_msgs.msg import Lane, Waypoint
 from std_msgs.msg import Int32
 
@@ -22,8 +22,13 @@ as well as to verify your TL classifier.
 TODO (for Yousuf and Aaron): Stopline location for each traffic light.
 '''
 
-LOOKAHEAD_WPS = 200 # Number of waypoints we will publish. You can change this number
-LOOP_RATE = 2 # Rate that waypoints are updated
+LOOKAHEAD_WPS = 200         # waypoints
+LOOP_RATE = 2               # hz
+MAX_SPD = 20.0 * 0.44704    # m/s
+ACCEL = 1.0                 # m/s^2
+DECEL = 1.0                 # m/s^2
+
+dl = lambda a, b: math.sqrt((a.x-b.x)**2 + (a.y-b.y)**2  + (a.z-b.z)**2)
 
 class WaypointUpdater(object):
     def __init__(self):
@@ -33,6 +38,7 @@ class WaypointUpdater(object):
         rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
         rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
         rospy.Subscriber('/traffic_waypoint', Int32, self.traffic_cb)
+        rospy.Subscriber('/current_velocity', TwistStamped, self.velocity_cb)
         # rospy.Subscriber('/obstacle_waypoint', ?, self.obstacle_cb) - Future
 
         # Publishers
@@ -43,9 +49,13 @@ class WaypointUpdater(object):
         self.base_waypoints = None
         self.traffic_waypoint = None
         self.obstacle_waypoint = None # Future
+        self.seq = 0
         self.frame_id = None
         
         # Other member variables
+        self.current_velocity = None
+        self.waypoints = None
+        self.nearest_waypoint_idx = -1
         rate = rospy.Rate(LOOP_RATE)
         start_time = 0
 
@@ -55,7 +65,7 @@ class WaypointUpdater(object):
         while not rospy.is_shutdown():
             if self.current_pose is None or self.base_waypoints is None or self.frame_id is None:
                 continue
-            self.final_waypoints_pub.publish(get_waypoints())
+            self.final_waypoints_pub.publish(self.get_publish_data())
             rate.sleep()
 
     def pose_cb(self, msg):
@@ -65,11 +75,15 @@ class WaypointUpdater(object):
 
     def waypoints_cb(self, waypoints):
         # Update member
-        self.base_waypoints = waypoints
+        self.base_waypoints = waypoints.waypoints
 
     def traffic_cb(self, msg):
         # Update member
         self.traffic_waypoint = msg.data
+
+    def velocity_cb(self, msg):
+        # Update member
+        self.current_velocity = msg.twist
 
     def obstacle_cb(self, msg): # Future
         # Update member
@@ -83,18 +97,106 @@ class WaypointUpdater(object):
 
     def distance(self, waypoints, wp1, wp2):
         dist = 0
-        dl = lambda a, b: math.sqrt((a.x-b.x)**2 + (a.y-b.y)**2  + (a.z-b.z)**2)
         for i in range(wp1, wp2+1):
             dist += dl(waypoints[wp1].pose.pose.position, waypoints[i].pose.pose.position)
             wp1 = i
         return dist
+
+    def check_waypoint_behind(self, pose, waypoint):
+        # TODO - Do I even need this?
+        return False
+    
+    def get_nearest_waypoint(self, pose, waypoints):
+        # Find index of nearest waypoint ahead of vehicle
+        best_dist = float('inf')
+        best_idx = 0
+        
+        # If current waypoint index not defined, search whole list
+        if self.nearest_waypoint_idx < 0:
+            # Loop through all basepoints and find shortest distance to pose
+            for i in range(0, len(waypoints)):
+                dist = dl(waypoints[i].pose.pose.position, pose.position)
+                if dist < best_dist:
+                    best_idx = i
+                    best_dist = dist
+        else:
+            # Start at previous nearest waypoint index - saves processing time
+            for i in range(self.nearest_waypoint_idx, len(waypoints)):
+                dist = dl(waypoints[i].pose.pose.position, pose.position)
+                if dist < best_dist:
+                    best_idx = i
+                    best_dist = dist
+                else:
+                    break
+            
+        # Now check if waypoint is behind
+        if self.check_waypoint_behind(pose, waypoints[best_idx]):
+            best_idx += 1
+                       
+        # Return index
+        self.nearest_waypoint_idx = best_idx
+        return best_idx
         
     def get_waypoints(self):
+        # Get waypoints in lookahead distance
+        idx1 = self.get_nearest_waypoint(self.current_pose, self.base_waypoints)
+        idx2 = idx1 + LOOKAHEAD_WPS - 1
+        indices = None
+        # Check for wrap around
+        if idx2 > len(self.base_waypoints):
+            indices = range(idx1, len(self.base_waypoints))
+            indices += range(0, idx2 - len(self.base_waypoints))
+        else:
+            indices = range(idx1, idx2)
+        wps = [self.base_waypoints[i] for i in indices]
+        
+        """ - TODO - In full implementation, check traffic_waypoint
+        # Check if there's a traffic light
+        if self.traffic_waypoint is None or self.traffic_waypoint == -1 or self.traffic_waypoint > waypoints[-1]:
+            # No traffic light, go full speed
+        
+        else:
+            # Stop at traffic light   
+        """
+        
+        # Partial implementation - Constant accel/decel to max speed, ignore jerk
+        vel = self.current_velocity.linear.x
+        self.set_waypoint_velocity(wps, 0, vel)
+        for i in range(0, len(wps) - 1):
+            if (vel < MAX_SPD):
+                # Kinematic eq - Vf^2 = Vi^2 + 2*a*d
+                vel = math.sqrt(vel*vel + 2 * ACCEL * self.distance(wps, i, i + 1))
+                # Don't overshoot
+                if (vel > MAX_SPD):
+                    vel = MAX_SPD
+            elif (vel > MAX_SPD):
+                # Kinematic eq - Vf^2 = Vi^2 + 2*a*d
+                vel = math.sqrt(vel*vel - 2 * DECEL * self.distance(wps, i, i + 1))
+                # Don't overshoot
+                if (vel < MAX_SPD):
+                    vel = MAX_SPD
+            self.set_waypoint_velocity(wps, i + 1, vel)
+        
+        # Return waypoints
+        return wps
+        
+    def get_publish_data(self):
         # Create lane
         lane = Lane()
         
-        # TODO - Define waypoints
+        # Set header
+        lane.header.seq = self.seq
+        self.seq += 1 # Increment
+        lane.header.stamp = rospy.Time.now()
+        lane.header.frame_id = self.frame_id
         
+        # Update waypoints
+        self.waypoints = self.get_waypoints()
+        
+        # Add waypoints to lane
+        lane.waypoints = self.waypoints
+        
+        # Return lane
         return lane
 
 
