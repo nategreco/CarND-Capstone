@@ -136,6 +136,23 @@ class WaypointUpdater(object):
         # Return index
         self.nearest_waypoint_idx = best_idx
         return best_idx
+    
+    def get_new_vel(self, vel, dist):
+        new_vel = vel
+        if (vel < MAX_SPD):
+            # Kinematic eq - Vf^2 = Vi^2 + 2*a*d
+            new_vel = math.sqrt(vel*vel + 2 * ACCEL * dist)
+            # Don't overshoot
+            if (vel > MAX_SPD):
+                new_vel = MAX_SPD
+        elif (vel > MAX_SPD):
+            # Kinematic eq - Vf^2 = Vi^2 + 2*a*d
+            new_vel = math.sqrt(vel*vel - 2 * DECEL * dist)
+            # Don't overshoot
+            if (vel < MAX_SPD):
+                vel = MAX_SPD
+        return new_vel
+        
         
     def get_waypoints(self):
         # Get waypoints in lookahead distance
@@ -160,21 +177,10 @@ class WaypointUpdater(object):
         """
         
         # Partial implementation - Constant accel/decel to max speed, ignore jerk
-        vel = self.current_velocity.linear.x
+        vel = self.get_new_vel(self.current_velocity.linear.x, dl(wps[0].pose.pose.position, self.current_pose.position))
         self.set_waypoint_velocity(wps, 0, vel)
         for i in range(0, len(wps) - 1):
-            if (vel < MAX_SPD):
-                # Kinematic eq - Vf^2 = Vi^2 + 2*a*d
-                vel = math.sqrt(vel*vel + 2 * ACCEL * self.distance(wps, i, i + 1))
-                # Don't overshoot
-                if (vel > MAX_SPD):
-                    vel = MAX_SPD
-            elif (vel > MAX_SPD):
-                # Kinematic eq - Vf^2 = Vi^2 + 2*a*d
-                vel = math.sqrt(vel*vel - 2 * DECEL * self.distance(wps, i, i + 1))
-                # Don't overshoot
-                if (vel < MAX_SPD):
-                    vel = MAX_SPD
+            vel = self.get_new_vel(self.current_velocity.linear.x, self.distance(wps, i, i + 1))
             self.set_waypoint_velocity(wps, i + 1, vel)
         
         # Return waypoints
