@@ -28,6 +28,7 @@ LOOP_RATE = 1               # hz
 MAX_SPD = 20.0 * 0.44704    # m/s
 ACCEL = 1.0                 # m/s^2
 DECEL = 1.0                 # m/s^2
+STOP_AHEAD = 5.0            # m
 
 dl = lambda a, b: math.sqrt((a.x-b.x)**2 + (a.y-b.y)**2  + (a.z-b.z)**2)
 
@@ -144,20 +145,16 @@ class WaypointUpdater(object):
         self.nearest_waypoint_idx = best_idx
         return best_idx
     
-    def get_new_vel(self, vel, dist):
+    def get_new_vel(self, trgt, vel, dist):
         new_vel = vel
-        if (vel < MAX_SPD):
-            # Kinematic eq - Vf^2 = Vi^2 + 2*a*d
-            new_vel = math.sqrt(vel*vel + 2 * ACCEL * dist)
-            # Don't overshoot
-            if (vel > MAX_SPD):
-                new_vel = MAX_SPD
-        elif (vel > MAX_SPD):
-            # Kinematic eq - Vf^2 = Vi^2 + 2*a*d
-            new_vel = math.sqrt(vel*vel - 2 * DECEL * dist)
-            # Don't overshoot
-            if (vel < MAX_SPD):
-                vel = MAX_SPD
+        if (vel < trgt):
+            new_vel = math.sqrt(vel*vel + 2 * ACCEL * dist) # Kinematic eq - Vf^2 = Vi^2 + 2*a*d
+            if (vel > trgt): # Don't overshoot
+                new_vel = trgt
+        elif (vel > trgt):
+            new_vel = math.sqrt(vel*vel - 2 * DECEL * dist) # Kinematic eq - Vf^2 = Vi^2 + 2*a*d
+            if (vel < trgt): # Don't overshoot
+                vel = trgt
         return new_vel
         
         
@@ -174,21 +171,24 @@ class WaypointUpdater(object):
             indices = range(idx1, idx2)
         wps = [self.base_waypoints[i] for i in indices]
         
-        """ - TODO - In full implementation, check traffic_waypoint
-        # Check if there's a traffic light
-        if self.traffic_waypoint is None or self.traffic_waypoint == -1 or self.traffic_waypoint > waypoints[-1]:
-            # No traffic light, go full speed
-        
-        else:
-            # Stop at traffic light   
-        """
-        
-        # Partial implementation - Constant accel/decel to max speed, ignore jerk
-        vel = self.get_new_vel(self.current_velocity.linear.x, dl(wps[0].pose.pose.position, self.current_pose.position))
+        # Constant accel/decel to max speed, ignore jerk
+        vel = self.get_new_vel(MAX_SPD, self.current_velocity.linear.x, dl(wps[0].pose.pose.position, self.current_pose.position))
         self.set_waypoint_velocity(wps, 0, vel)
         for i in range(0, len(wps) - 1):
-            vel = self.get_new_vel(self.current_velocity.linear.x, self.distance(wps, i, i + 1))
+            vel = self.get_new_vel(MAX_SPD, self.current_velocity.linear.x, self.distance(wps, i, i + 1))
             self.set_waypoint_velocity(wps, i + 1, vel)
+        
+        # Now check if we should stop for a traffic light
+        if not (self.traffic_waypoint is None or self.traffic_waypoint == -1 or self.traffic_waypoint > waypoints[-1]):
+            # Re-profile velocity to stop at traffic light
+            vel = self.get_waypoint_velocity(wps[0])
+            for i in range(0, len(wps) - 1):
+                light_dist = dl(wps[0].pose.pose.position, self.base_waypoints[self.traffic_waypoint].pose.pose.position) - STOP_AHEAD
+                stop_dist = (vel * vel) / (2 * DECEL) # Kinematic eq - Vf^2 = Vi^2 + 2*a*d
+                if (light_dist > stop_dist):
+                    continue
+                vel = self.get_new_vel(0, vel, self.distance(wps, i, i + 1))
+                self.set_waypoint_velocity(wps, i + 1, vel)
         
         # Return waypoints
         return wps
