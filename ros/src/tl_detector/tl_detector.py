@@ -146,7 +146,8 @@ class TLDetector(object):
 
         detection_result=tiny_yolo_detect(cv_image,model)
         if np.shape(detection_result)!=():
-            light_class=self.light_classifier.get_classification(detection_result)
+            #light_class=self.light_classifier.get_classification(detection_result)
+            light_class=self.light.state
             if light_class==0:
                 state=TrafficLight.RED
             if else light_class==1:
