@@ -152,7 +152,7 @@ class WaypointUpdater(object):
             if (vel > trgt): # Don't overshoot
                 new_vel = trgt
         elif (vel > trgt):
-            new_vel = math.sqrt(vel*vel - 2 * DECEL * dist) # Kinematic eq - Vf^2 = Vi^2 + 2*a*d
+            new_vel = math.sqrt(max(0,vel*vel - 2 * DECEL * dist)) # Kinematic eq - Vf^2 = Vi^2 + 2*a*d
             if (vel < trgt): # Don't overshoot
                 vel = trgt
         return new_vel
@@ -179,7 +179,7 @@ class WaypointUpdater(object):
             self.set_waypoint_velocity(wps, i + 1, vel)
         
         # Now check if we should stop for a traffic light
-        if not (self.traffic_waypoint is None or self.traffic_waypoint == -1 or self.traffic_waypoint > waypoints[-1]):
+        if not (self.traffic_waypoint is None or self.traffic_waypoint == -1 or self.traffic_waypoint > self.waypoints[-1]):
             # Re-profile velocity to stop at traffic light
             vel = self.get_waypoint_velocity(wps[0])
             for i in range(0, len(wps) - 1):
