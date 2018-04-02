@@ -25,7 +25,7 @@ class TLDetector(object):
         self.pose = None
         self.waypoints = None
         self.waypoints_2d=None
-        seld.waypoints_tree=None
+        self.waypoints_tree=None
         self.camera_image = None
         self.lights = []
 
@@ -150,12 +150,11 @@ class TLDetector(object):
             light_class=self.light.state
             if light_class==0:
                 state=TrafficLight.RED
-            if else light_class==1:
+            elif light_class==1:
                 state=TrafficLight.YELLOW
             else:
                 state=TrafficLight.GREEN
-
-        else
+        else:
             state=TrafficLight.UNKNOWN
 
         #Get classification
