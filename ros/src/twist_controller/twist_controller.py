@@ -9,6 +9,7 @@ from dbw_node import vehicle_properties
 GAS_DENSITY = 2.858
 ONE_MPH = 0.44704
 
+# this code is based on 'DBW walkthrough' presentation
 
 class Controller(object):
     def __init__(self, vehicle_properties):
@@ -85,7 +86,7 @@ class Controller(object):
 
         brake_control = 0.0
 
-        if linear_vel == 0. and current_vel < .01:
+        if linear_vel == 0. and current_vel < .1:
             throttle_control = 0
             brake_control = 400 #N*m - to hold car if stopped
 
