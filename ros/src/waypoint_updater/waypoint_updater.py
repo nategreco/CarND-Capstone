@@ -26,8 +26,8 @@ TODO (for Yousuf and Aaron): Stopline location for each traffic light.
 LOOKAHEAD_WPS = 100         # waypoints
 LOOP_RATE = 1               # hz
 MAX_SPD = 20.0 * 0.44704    # m/s
-ACCEL = 1.0                 # m/s^2
-DECEL = 1.0                 # m/s^2
+ACCEL = 0.5                 # m/s^2
+DECEL = 0.5                 # m/s^2
 STOP_AHEAD = 5.0            # m
 
 dl = lambda a, b: math.sqrt((a.x-b.x)**2 + (a.y-b.y)**2  + (a.z-b.z)**2)
@@ -146,16 +146,19 @@ class WaypointUpdater(object):
         return best_idx
     
     def get_new_vel(self, trgt, vel, dist):
-        new_vel = vel
+        # Check if we need to accel
         if (vel < trgt):
-            new_vel = math.sqrt(vel*vel + 2 * ACCEL * dist) # Kinematic eq - Vf^2 = Vi^2 + 2*a*d
+            vel = math.sqrt(vel*vel + 2 * ACCEL * dist) # Kinematic eq - Vf^2 = Vi^2 + 2*a*d
             if (vel > trgt): # Don't overshoot
-                new_vel = trgt
+                vel = trgt
+        # Check if we need to decel
         elif (vel > trgt):
-            new_vel = math.sqrt(max(0,vel*vel - 2 * DECEL * dist)) # Kinematic eq - Vf^2 = Vi^2 + 2*a*d
+            vel = math.sqrt(max(0,vel*vel - 2 * DECEL * dist)) # Kinematic eq - Vf^2 = Vi^2 + 2*a*d
             if (vel < trgt): # Don't overshoot
                 vel = trgt
-        return new_vel
+        
+        # Apply universal limits and return
+        return max(min(vel,MAX_SPD),0)
         
         
     def get_waypoints(self):
@@ -172,23 +175,32 @@ class WaypointUpdater(object):
         wps = [self.base_waypoints[i] for i in indices]
         
         # Constant accel/decel to max speed, ignore jerk
-        vel = self.get_new_vel(MAX_SPD, self.current_velocity.linear.x, dl(wps[0].pose.pose.position, self.current_pose.position))
+        vel = self.current_velocity.linear.x
+        # if not self.waypoints is None:
+        #     vel = self.get_waypoint_velocity(self.waypoints[self.get_nearest_waypoint(self.current_pose, self.waypoints)])
+        vel = self.get_new_vel(MAX_SPD, vel, dl(wps[0].pose.pose.position, self.current_pose.position))
         self.set_waypoint_velocity(wps, 0, vel)
         for i in range(0, len(wps) - 1):
-            vel = self.get_new_vel(MAX_SPD, self.current_velocity.linear.x, self.distance(wps, i, i + 1))
+            vel = self.get_new_vel(MAX_SPD, vel, self.distance(wps, i, i + 1))
             self.set_waypoint_velocity(wps, i + 1, vel)
         
         # Now check if we should stop for a traffic light
-        if not (self.traffic_waypoint is None or self.traffic_waypoint == -1 or self.traffic_waypoint > self.waypoints[-1]):
+        if not (self.traffic_waypoint is None or self.traffic_waypoint == -1):
             # Re-profile velocity to stop at traffic light
-            vel = self.get_waypoint_velocity(wps[0])
+            stop_pt = False
             for i in range(0, len(wps) - 1):
-                light_dist = dl(wps[0].pose.pose.position, self.base_waypoints[self.traffic_waypoint].pose.pose.position) - STOP_AHEAD
-                stop_dist = (vel * vel) / (2 * DECEL) # Kinematic eq - Vf^2 = Vi^2 + 2*a*d
-                if (light_dist > stop_dist):
-                    continue
-                vel = self.get_new_vel(0, vel, self.distance(wps, i, i + 1))
-                self.set_waypoint_velocity(wps, i + 1, vel)
+                if not stop_pt:
+                    vel = self.get_waypoint_velocity(wps[i])
+                    light_dist = dl(wps[0].pose.pose.position, self.base_waypoints[self.traffic_waypoint].pose.pose.position) - STOP_AHEAD
+                    stop_dist = (vel * vel) / (2 * 0.75 * DECEL) # Kinematic eq - Vf^2 = Vi^2 + 2*a*d, reduced decel for insurance
+                    if (light_dist <= stop_dist):
+                        stop_pt = True
+                else:
+                    vel = self.get_new_vel(0, vel, self.distance(wps, i, i + 1))
+                    self.set_waypoint_velocity(wps, i + 1, vel)
+        
+        # for i in range(0, len(wps)):
+        #     rospy.logwarn("Waypoint " + str(i) + " speed is: " + str(self.get_waypoint_velocity(wps[i])))
         
         # Return waypoints
         return wps
