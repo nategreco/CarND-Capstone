@@ -26,9 +26,9 @@ TODO (for Yousuf and Aaron): Stopline location for each traffic light.
 LOOKAHEAD_WPS = 100         # waypoints
 LOOP_RATE = 1               # hz
 MAX_SPD = 20.0 * 0.44704    # m/s
-ACCEL = 0.5                 # m/s^2
-DECEL = 0.5                 # m/s^2
-STOP_AHEAD = 5.0            # m
+ACCEL = 1.0                 # m/s^2
+DECEL = 1.0                 # m/s^2
+STOP_AHEAD = 5.0            # m - Not in use
 
 dl = lambda a, b: math.sqrt((a.x-b.x)**2 + (a.y-b.y)**2  + (a.z-b.z)**2)
 
@@ -57,7 +57,6 @@ class WaypointUpdater(object):
         # Other member variables
         self.current_velocity = None
         self.waypoints = None
-        self.nearest_waypoint_idx = -1
         rate = rospy.Rate(LOOP_RATE)
         start_time = 0
 
@@ -119,30 +118,18 @@ class WaypointUpdater(object):
         best_dist = float('inf')
         best_idx = 0
         
-        # If current waypoint index not defined, search whole list
-        if self.nearest_waypoint_idx < 0:
-            # Loop through all basepoints and find shortest distance to pose
-            for i in range(0, len(waypoints)):
-                dist = dl(waypoints[i].pose.pose.position, pose.position)
-                if dist < best_dist:
-                    best_idx = i
-                    best_dist = dist
-        else:
-            # Start at previous nearest waypoint index - saves processing time
-            for i in range(self.nearest_waypoint_idx, len(waypoints)):
-                dist = dl(waypoints[i].pose.pose.position, pose.position)
-                if dist < best_dist:
-                    best_idx = i
-                    best_dist = dist
-                else:
-                    break
+        # Loop through all basepoints and find shortest distance to pose
+        for i in range(0, len(waypoints)):
+            dist = dl(waypoints[i].pose.pose.position, pose.position)
+            if dist < best_dist:
+                best_idx = i
+                best_dist = dist
             
         # Now check if waypoint is behind
         if self.check_waypoint_behind(pose, waypoints[best_idx]):
             best_idx += 1
                        
         # Return index
-        self.nearest_waypoint_idx = best_idx
         return best_idx
     
     def get_new_vel(self, trgt, vel, dist, accel, decel):
@@ -177,32 +164,39 @@ class WaypointUpdater(object):
         
         # Constant accel/decel to max speed, ignore jerk
         vel = self.current_velocity.linear.x
-        # if not self.waypoints is None:
-        #     vel = self.get_waypoint_velocity(self.waypoints[self.get_nearest_waypoint(self.current_pose, self.waypoints)])
-        vel = self.get_new_vel(MAX_SPD, vel, dl(wps[0].pose.pose.position, self.current_pose.position), ACCEL, DECEL)
+        if not self.waypoints is None:
+            ref_vel_idx = self.get_nearest_waypoint(self.current_pose, self.waypoints)
+            if ref_vel_idx:
+                vel = self.get_waypoint_velocity(self.waypoints[ref_vel_idx])
+            vel = self.get_new_vel(MAX_SPD, vel, dl(self.waypoints[ref_vel_idx].pose.pose.position, self.current_pose.position), ACCEL, DECEL)
         self.set_waypoint_velocity(wps, 0, vel)
         for i in range(0, len(wps) - 1):
             vel = self.get_new_vel(MAX_SPD, vel, self.distance(wps, i, i + 1), ACCEL, DECEL)
             self.set_waypoint_velocity(wps, i + 1, vel)
         
         # Now check if we should stop for a traffic light
-        if not (self.traffic_waypoint is None or self.traffic_waypoint == -1):
+        if not ((self.traffic_waypoint is None) or (self.traffic_waypoint == -1)):
             # Re-profile velocity to stop at traffic light
+            vel = self.get_waypoint_velocity(wps[0])
             stop_pt = False
             for i in range(0, len(wps) - 1):
-                light_dist = dl(wps[i].pose.pose.position, self.base_waypoints[self.traffic_waypoint].pose.pose.position) - STOP_AHEAD
+                # Check for stop trigger
+                light_dist = dl(wps[i].pose.pose.position, self.base_waypoints[self.traffic_waypoint].pose.pose.position)
+                stop_dist = (vel * vel) / (2 * DECEL) # Kinematic eq - Vf^2 = Vi^2 + 2*a*d
+                if (light_dist <= stop_dist) or (light_dist < 1):
+                    stop_pt = True
+                # Handle stop trigger
                 if not stop_pt:
                     vel = self.get_waypoint_velocity(wps[i])
-                    stop_dist = (vel * vel) / (2 * 0.75 * DECEL) # Kinematic eq - Vf^2 = Vi^2 + 2*a*d, reduced decel for insurance
-                    if (light_dist <= stop_dist):
-                        stop_pt = True
                 else:
+                    light_dist = max(0.1, light_dist) # Prevent division by zero or negative decel
+                    vel = max(0, vel) # Prevent negative decel
                     new_decel = (vel * vel) / (2 * light_dist) # Calculate decel needed to make the light
-                    vel = self.get_new_vel(0, vel, self.distance(wps, i, i + 1), ACCEL, 1.2 * new_decel) # Increased decel extra insurance
-                    self.set_waypoint_velocity(wps, i + 1, vel)
+                    vel = self.get_new_vel(0, vel, self.distance(wps, i, i + 1), 0, new_decel)
+                    self.set_waypoint_velocity(wps, i, vel)
         
-        # for i in range(0, len(wps)):
-        #     rospy.logwarn("Waypoint " + str(i) + " speed is: " + str(self.get_waypoint_velocity(wps[i])))
+        # for i in range(0, 10): # len(wps)):
+        #    rospy.logwarn("Waypoint " + str(i) + " speed is: " + str(self.get_waypoint_velocity(wps[i])))
 
         # Return waypoints
         return wps
