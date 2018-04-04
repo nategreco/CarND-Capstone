@@ -6,24 +6,13 @@
 
 **Team Members**
 
-| Name | Email |
-| --- |:---:|
-| Nathan Greco | nathan.greco@gmail.com |
-| Charles Faivre | chuck@ratsnestinc.com |
-| John Novotny | john.novotny@gmail.com |
-| Mohamed Hussien | eng.mohamedhussien1991@gmail.com |
-| Virendra Kumar Anand | vkanand1976@gmail.com |
-
-**Capstone Project Task List**
-
-| **Filename** | **Owner** |
-| --- |:---:|
-| tl_classifier.py | Virendra Kumar Anand |
-| tl_detector.py | Mohamed Hussien |
-| dbw_node.py | John Novotny |
-| twist_controler.py | John Novotny |
-| waypoint_updater.py | Nathan Greco & Charles Faivre |
-| README.md | Nathan Greco |
+| Name                 | Email                            | Slack Handle     | Node             |
+|:--------------------:|:--------------------------------:|:----------------:|:----------------:|
+| Nathan Greco         | nathan.greco@gmail.com           | @nategreco       | waypoint_updater |
+| Charles Faivre       | chuck@ratsnestinc.com            | @cpfaivre        | dbw_node         |
+| John Novotny         | john.novotny@gmail.com           | @jnovotny        | twist_controler  |
+| Mohamed Hussien      | eng.mohamedhussien1991@gmail.com | @mohamed_hussien | tl_detector      |
+| Virendra Kumar Anand | vkanand1976@gmail.com            | @vkanand         | tl_classifier    |
 
 **Capstone Project Goals**
 
@@ -44,7 +33,30 @@ The goals / steps of this project are the following:
 
 #### 1. Implementation
 
+##### a. Waypoint Updater (partial)
+
 ToDo
+
+##### b. DBW Node
+
+ToDo
+
+##### c. Twist Controller
+
+ToDo
+
+##### d. Traffic Light Detector
+
+ToDo
+
+##### e. Traffic Light Classifier
+
+ToDo
+
+##### f. Waypoint Updater (full)
+
+ToDo
+
 
 #### 2. Results
 
