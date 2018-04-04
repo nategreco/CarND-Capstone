@@ -8,6 +8,7 @@ from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
 from light_classification.tl_classifier import TLClassifier
 import tf
+import tensorflow as tf_nm
 import cv2
 import yaml
 from scipy.spatial import KDTree
@@ -16,6 +17,8 @@ from keras.models import load_model
 from helper import *
 
 model = load_model('tiny_yolo_coco.h5')
+graph = tf_nm.get_default_graph();
+
 STATE_COUNT_THRESHOLD = 3
 
 class TLDetector(object):
@@ -80,7 +83,10 @@ class TLDetector(object):
         """
         self.has_image = True
         self.camera_image = msg
-        light_wp, state = self.process_traffic_lights()
+        light_wp = -1
+        state = TrafficLight.UNKNOWN
+        if not self.waypoints_tree is None:
+            light_wp, state = self.process_traffic_lights()
 
         '''
         Publish upcoming red lights at camera frequency.
@@ -143,11 +149,13 @@ class TLDetector(object):
 
         cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "bgr8")
 
-
-        detection_result=tiny_yolo_detect(cv_image,model)
+	global graph
+        with graph.as_default():
+    		detection_result=tiny_yolo_detect(cv_image,model)        
         if np.shape(detection_result)!=():
             #light_class=self.light_classifier.get_classification(detection_result)
-            light_class=self.light.state
+            #light_class=self.light.state
+	    light_class=0;
             if light_class==0:
                 state=TrafficLight.RED
             elif light_class==1:
