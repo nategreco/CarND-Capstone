@@ -39,7 +39,7 @@ ToDo
 
 ##### b. DBW Node
 
-ToDo
+DBWNode is a ROS node that is responsible for taking twist_cmd data published from the Waypoint Follower ROS node, and information from the car/simulator from ROS topics: current_velocity and dbw_enabled. This ROS node publishes topics for brake control, steering, and throttle as provided by the twist_controller. If dbw_enabled, the car/simulator will take the control data and operate the vehicle
 
 ##### c. Twist Controller
 
@@ -61,4 +61,3 @@ ToDo
 #### 2. Results
 
 ToDo
-
