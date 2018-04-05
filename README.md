@@ -92,7 +92,7 @@ Traffic Light Classifier
 
 Traffic light classifier is responsible for classifying the passed images as Red, Green or Yellow state of traffic light. Traffic light detector module detects an object as traffic light and saves the image of detected traffic light. It calls Traffic light classifier and passes the image of detected traffic light and gets back a label corresponding to the color state of the traffic light. Traffic light is a re-trained Inception classifier on the traffic light images extracted from Bosch Small Traffic Lights Dataset. Different size and brightness images were used for the training. Also some of the images were little angled. The inception classifier as explained in below github has been used for 5000 steps. 
 
- https://github.com/llSourcell/tensorflow_image_classifier - automatic!
+ https://github.com/llSourcell/tensorflow_image_classifier
 
 After the end of 5000 steps, the training process resulted in training accuracy of 91.2% and validation accuracy of 93%. After that few random images of traffic signs were passed that gave below results.
 
