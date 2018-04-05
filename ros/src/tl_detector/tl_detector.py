@@ -33,7 +33,7 @@ class TLDetector(object):
         self.waypoints_tree = None
         self.camera_image = None
         self.lights = []
-        print("TLDetect Object Created")
+
 
         sub1 = rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
         sub2 = rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
@@ -161,8 +161,8 @@ class TLDetector(object):
             #print(detection_result)
             if np.shape(detection_result) != ():
                 img = PImage.fromarray(detection_result, 'RGB')
-                img.save('/tmp/temp.jpg')
-                light_class = self.light_classifier.get_classification('/tmp/temp.jpg')
+                img.save('temp.jpg')
+                light_class = self.light_classifier.get_classification('temp.jpg')
                 if light_class == 0:
                     state = TrafficLight.RED
                 elif light_class == 1:
@@ -204,7 +204,6 @@ class TLDetector(object):
 
         if closest_light:
             state = self.get_light_state(closest_light)
-            print(state)
             return line_wp_idx, state
 
         return -1, TrafficLight.UNKNOWN

@@ -1,4 +1,0 @@
-off
-green
-yellow
-red
