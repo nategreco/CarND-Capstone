@@ -88,7 +88,35 @@ Here are some results of the detection model:<br>
 
 ##### e. Traffic Light Classifier
 
-ToDo
+Traffic Light Classifier
+
+Traffic light classifier is responsible for classifying the passed images as Red, Green or Yellow state of traffic light. Traffic light detector module detects an object as traffic light and saves the image of detected traffic light. It calls Traffic light classifier and passes the image of detected traffic light and gets back a label corresponding to the color state of the traffic light. Traffic light is a re-trained Inception classifier on the traffic light images extracted from Bosch Small Traffic Lights Dataset. Different size and brightness images were used for the training. Also some of the images were little angled. The inception classifier as explained in below github has been used for 5000 steps. 
+
+ https://github.com/llSourcell/tensorflow_image_classifier - automatic!
+
+After the end of 5000 steps, the training process resulted in training accuracy of 91.2% and validation accuracy of 93%. After that few random images of traffic signs were passed that gave below results.
+
+|Image   | Actual Color   |  Predicted  | Probability of Prediction   |  Comment    |
+|:------:|:--------------:|:-----------:|:---------------------------:|:----------:|  
+|<img src="./ros/src/tl_detector/light_classification/tl_sample/0r1.jpeg" alt="original" height=150px>| Yellow | Yellow |0.76714|	|
+|<img src="./ros/src/tl_detector/light_classification/tl_sample/0r3.jpeg" alt="original" height=150px>| Red    | Red    |0.67141| |
+|<img src="./ros/src/tl_detector/light_classification/tl_sample/0s1.jpeg" alt="original" height=150px>| Red    | Red    |0.58037| |
+|<img src="./ros/src/tl_detector/light_classification/tl_sample/0s2.jpeg" alt="original" height=150px>| Yellow | Red    |0.53224| |
+|<img src="./ros/src/tl_detector/light_classification/tl_sample/0s3.jpeg" alt="original" height=150px>| Green  | Green  |0.7778 |Picked up safer option.|
+|<img src="./ros/src/tl_detector/light_classification/tl_sample/just_traffic_light_0002.jpg" alt="original" height=150px>| Green | Red    |0.38152|No clear winner, slightly inclined towards red.|
+|<img src="./ros/src/tl_detector/light_classification/tl_sample/just_traffic_light_0051.jpg" alt="original" height=150px>| Green| Green  |0.67349| |
+|<img src="./ros/src/tl_detector/light_classification/tl_sample/just_traffic_light_0127.jpg" alt="original" height=150px>| Yellow| Yellow |0.5037| |
+|<img src="./ros/src/tl_detector/light_classification/tl_sample/just_traffic_light_0410.jpg" alt="original" height=150px>| Yellow| Red |0.48372|No clear winner, slightly inclined towards red. |
+|<img src="./ros/src/tl_detector/light_classification/tl_sample/just_traffic_light_0469.jpg" alt="original" height=150px>| Red| Yellow |0.41307|No clear winner. Picked up Yellow instead of Red.|
+|<img src="./ros/src/tl_detector/light_classification/tl_sample/just_traffic_light_0601.jpg" alt="original" height=150px>| Green| Green |0.960062||
+|<img src="./ros/src/tl_detector/light_classification/tl_sample/left0000.jpg" alt="original" height=150px>| Green| Green |0.84519||
+|<img src="./ros/src/tl_detector/light_classification/tl_sample/left0003.jpg" alt="original" height=150px>| Green| Green |0.74188||
+|<img src="./ros/src/tl_detector/light_classification/tl_sample/left0011.jpg" alt="original" height=150px>| Yellow| Red |0.42038|No clear winner, slightly inclined towards red.|
+
+
+The above shows that in the simulator images, Yellow was mostly picked as Red which is safer option. To speed up the inference process, model was loaded only once during when TLClassifier object was created. In case the inference was giving probability of less than 50% on any image then that detection was not considered as good and defaulted to red light detection for a safer option.
+
+
 
 ##### f. Waypoint Updater (full)
 
