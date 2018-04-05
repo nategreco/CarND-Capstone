@@ -8,10 +8,10 @@ class TLClassifier(object):
         #Load lable files
         
         label=[line.rstrip() for line 
-                   in tf.gfile.GFile("retrained_labels.txt")]
+                   in tf.gfile.GFile("light_classification/retrained_labels.txt")]
 
         #Load the graph
-        with tf.gfile.FastGFile("retrained_graph.pb", 'rb') as f:
+        with tf.gfile.FastGFile("light_classification/retrained_graph.pb", 'rb') as f:
             graph_def = tf.GraphDef()
             graph_def.ParseFromString(f.read())
             _ = tf.import_graph_def(graph_def, name='')
