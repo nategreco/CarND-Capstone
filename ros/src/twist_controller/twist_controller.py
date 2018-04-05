@@ -9,9 +9,13 @@ from dbw_node import vehicle_properties
 GAS_DENSITY = 2.858
 ONE_MPH = 0.44704
 
-# this code is based on 'DBW walkthrough' presentation
+# Credit Statement: this code is based on 'DBW walkthrough' presentation
 
 class Controller(object):
+    '''
+    Controller implements a twist controller. It's purpose is to provided
+    control data for breaking, steering, and throattle control. The controller
+    '''
     def __init__(self, vehicle_properties):
         # store vehicle properties
         self.vp = vehicle_properties
@@ -34,30 +38,23 @@ class Controller(object):
             mx = self.vp.accel_limit      # max
         )
 
-        # create filters (TODO: tau and ts are guesses - from walkthrough)
-        self.steering_filter = LowPassFilter(tau = 0.5, ts = .02) # TODO: needed?
+        # create filters (TODO: tau and ts are from walkthrough)
+        self.steering_filter = LowPassFilter(tau = 0.2, ts = .1)  # TODO: tweak
         self.velocity_filter = LowPassFilter(tau = 0.5, ts = .02)
         self.prior_timestamp = rospy.get_time() # initial time stamp
 
         self.torque = ((self.vp.vehicle_mass + self.vp.fuel_capacity * GAS_DENSITY) *
                        self.vp.wheel_radius)
-        # Subscribers
-        # TODO: any Subscribers needed?
-
-        # Publishers
-        #self.current_velocity_pub = rospy.Publisher('current_velocity', TwistStamped, queue_size=1)
-
-        # TODO: Implement
         pass
 
     def control(self, twist_cmd, current_vel, dbw_enabled):
 
         # rospy.logwarn("dbw_enabled: {0}".format(dbw_enabled))
 
-        # dbw not enabled
+        # dbw is not enabled
         if not dbw_enabled:
             self.pid.reset()
-            return 0., 0., 0,
+            return 0., 0., 0.
 
         # smoothout income velocity values
         current_vel = self.velocity_filter.filt(current_vel)
@@ -72,8 +69,7 @@ class Controller(object):
             current_vel
             )
 
-        # filter the steering jitter TODO: need this?
-        # attempt to damp steering
+        # filter the steering jitter
         steering_control = self.steering_filter.filt(steering_control)
 
         # get acceration from PID
@@ -87,13 +83,13 @@ class Controller(object):
         brake_control = 0.0
 
         if linear_vel == 0. and current_vel < .1:
-            throttle_control = 0
+            throttle_control = 0.
             brake_control = 400 #N*m - to hold car if stopped
 
         elif throttle_control < 0.1 and vel_error < 0:
-            throttle_control = 0
+            throttle_control = 0.
             decel = max(vel_error, self.vp.decel_limit)
             brake_control = abs(decel) * self.torque
 
-        # Return throttle, brake, steer
+        # Return throttle, brake, steering control data
         return throttle_control, brake_control, steering_control
