@@ -15,6 +15,7 @@ from scipy.spatial import KDTree
 import numpy as np
 from keras.models import load_model
 from helper import *
+from PIL import Image as PImage
 
 model = load_model('tiny_yolo_coco.h5')
 graph = tf_nm.get_default_graph();
@@ -31,6 +32,7 @@ class TLDetector(object):
         self.waypoints_tree=None
         self.camera_image = None
         self.lights = []
+	print("TLDetect Object Created")
 
         sub1 = rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
         sub2 = rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
@@ -148,20 +150,26 @@ class TLDetector(object):
             return False
 
         cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "bgr8")
-
+	print("Got image from simulator")
 	global graph
         with graph.as_default():
-    		detection_result=tiny_yolo_detect(cv_image,model)        
+    		detection_result=tiny_yolo_detect(cv_image,model)
+	print(detection_result)        
         if np.shape(detection_result)!=():
-            #light_class=self.light_classifier.get_classification(detection_result)
+	    print("tl_detector sent image to classifier")
+            img = PImage.fromarray(detection_result, 'RGB')
+            img.save('/tmp/temp.jpg')
+            light_class=self.light_classifier.get_classification('/tmp/temp.jpg')
             #light_class=self.light.state
-	    light_class=0;
+	    #light_class=0;
             if light_class==0:
                 state=TrafficLight.RED
             elif light_class==1:
                 state=TrafficLight.YELLOW
-            else:
+            elif light_class==2:
                 state=TrafficLight.GREEN
+	    else:
+		state=TrafficLight.UNKNOWN
         else:
             state=TrafficLight.UNKNOWN
 
@@ -200,6 +208,7 @@ class TLDetector(object):
         if closest_light:
 
             state = self.get_light_state(closest_light)
+	    print(state)
             return line_wp_idx, state
 
         return -1, TrafficLight.UNKNOWN
