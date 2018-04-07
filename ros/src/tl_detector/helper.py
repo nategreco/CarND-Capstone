@@ -16,10 +16,11 @@ BOX						  = 5
 CLASS						= len(LABELS)
 CLASS_WEIGHTS		= np.ones(CLASS, dtype='float32')
 
+
 #ANCHORS = [18.3274,21.6763,  59.9827,66.001,  106.83,175.179,  252.25,112.889,  312.657,293.385]
 #ANCHORS=np.array(ANCHORS)/25
 ANCHORS = [0.57273, 0.677385, 1.87446, 2.06253, 3.33843, 5.47434, 7.88282, 3.52778, 9.77052, 9.16828]
-ANCHORS=np.array(ANCHORS)*1.3
+ANCHORS=np.array(ANCHORS)*1.4
 OBJ_THRESHOLD		= 0.18
 NMS_THRESHOLD		= 0
 
@@ -166,7 +167,7 @@ def draw_bboxes(image,bboxes,labels,wanted_labels):
 def tiny_yolo_detect(image,model):
 		img=image
 		image=cv2.resize(image, (416, 416))
-		image=(image/255)
+		image=(np.array(image,dtype=np.float)/255)
 		image = np.expand_dims(image, 0)
 		a=model.predict(image)
 		bboxes=get_YOLO_boxes(a,OBJ_THRESHOLD,NMS_THRESHOLD,ANCHORS)
