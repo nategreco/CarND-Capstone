@@ -98,6 +98,9 @@ class DBWNode(object):
         rospy.Subscriber('/current_velocity', TwistStamped, self.current_velocity_cb, queue_size=5)
         rospy.Subscriber('/vehicle/dbw_enabled', Bool, self.dbw_enabled_cb, queue_size=1)
 
+        # first run flag
+        self.first_run_flag = 250  # @50/second time to hold break at starup - teakable
+
         self.loop()
 
 
@@ -117,6 +120,14 @@ class DBWNode(object):
         rate = rospy.Rate(50) # 50Hz
         while not rospy.is_shutdown():
             # Get predicted throttle, brake, and steering using `twist_controller`
+
+            if self.first_run_flag > 0:
+                # initially no steering, no throattle and full break
+                self.publish(0., 400., 0.)
+                self.first_run_flag -= 1
+                # rospy.logwarn("dbw_node: pre-brakes applied")
+                rate.sleep()
+                continue
 
             do_process = (self.current_velocity is not None and
                           self.twist_cmd is not None)
