@@ -26,6 +26,9 @@ The goals / steps of this project are the following:
 * Launch correctly using the launch files provided in the capstone repo. **Please note that we will not be able to accomodate special launch instructions or run additional scripts from your submission to download files.** The 'launch/styx.launch' and 'launch/site.launch' files will be used to test code in the simulator and on the vehicle respectively. The submission size limit for this project has been increased to 2GB.
 
 [//]: # (Image References)
+[image1]: ./imgs/WaypointEq1.png "Kinematic Equation"
+[image2]: ./imgs/WaypointEq2.png "Rearranged for stopping distance"
+[image3]: ./imgs/WaypointEq3.png "Rearranged for profiling velocity"
 
 ---
 
@@ -62,7 +65,21 @@ The following variables were defined as tunable values:
 * `STOP_AHEAD = 2.0            # m`
 
 Summary of functionality:
-On a cyclic basis, the `/final_waypoints` publisher publishes the result of method `get_publish_data()`. `get_publish_data()` only constructs the `lane` object for the publisher, by creating the header and appending it with the data from `get_waypoints()`.  `get_waypoints()` does most of the heavy lifting, first determining the nearest waypoint with `get_nearest_waypoint()`, which finds the nearest waypoint that is ahead, requiring the implementation of `check_waypoint_behind()`.  Once the nearest waypoint is found, the range of indices of the `/base_waypoints` in length of `LOOKAHEAD_WPS`
+On a cyclic basis of `LOOP_RATE`, the `/final_waypoints` publisher publishes the result of method `get_publish_data()`. `get_publish_data()` only constructs the `lane` object for the publisher, by creating the header and appending it with the data from `get_waypoints()`.  `get_waypoints()` does most of the heavy lifting, first determining the nearest waypoint with `get_nearest_waypoint()`, which finds the nearest waypoint that is ahead, requiring the implementation of `check_waypoint_behind()`.  Once the nearest waypoint is found, the range of indices of the `/base_waypoints` that span the length of `LOOKAHEAD_WPS` is copied to the `wps` object, however no velocity profiling is done.  Also here, special care is taken in the edge case where the lookahead points span across the last and first waypoint.
+
+Once the waypoints are created, velocity profiling is needed.  This is where the partial and full implementation can be differentiated.  In the partial, we profile velocity to `MAX_SPD` with `get_new_vel()` and we are done.  The full implementation kept this, but afterwards checked for a traffic light in the range of our lookahead waypoints.  Profiling of all the velocities relied heavily on the following Kinematic Equation:
+
+![Kinematic Equation][image1]
+
+First, the equation was rearranged to calculate stopping distance, like so:
+
+![Rearranged for stopping distance][image2]
+
+This allowed us to keep the profile velocity up until that set distance from the `/traffic_waypoint`.  At that point, we invoked `get_new_vel()` and used the following arrangement of the kinematic equation:
+
+![Rearranged for profiling velocity][image3]
+
+This would provide the proper constant decel profiling we wanted over the distance between waypoints.  Once profiled to a stop, the loop would hold that velocity at zero for the remainder of the waypoints and until the `/traffic_waypoint` value was clear, at which point we'd begin ramping up the velocity again.
 
 
 
