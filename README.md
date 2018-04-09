@@ -33,9 +33,38 @@ The goals / steps of this project are the following:
 
 #### 1. Implementation
 
-##### a. Waypoint Updater (partial)
+##### a. Waypoint Updater
 
-ToDo
+The waypoint updater was completed in two parts.  An initial partial implementation was completed so that other nodes could begin development, then later in the project a full implementation was done.
+
+The partial implementation accomplishes the following:
+* Implements the following subscribers(s) 
+  * `/current_pose` with callback `pose_cb()`
+  * `/base_waypoints` with `waypoints_cb()`
+  * `/traffic_waypoint` with `traffic_cb()`
+  * `/current_velocity` with `velocity_cb()`
+* Implements the following publisher(s)
+  * `/final_waypoints` with `get_publish_data()`
+* Finds nearest waypoint to current pose with `get_nearest_waypoint()`
+* Profiles waypoint velocity with `get_new_vel()`
+* Gets new waypoint list to publish with `get_waypoints()`
+
+The full implementation added the additional feature(s):
+* Checks for a `/traffic_waypoint` along the vehicle path
+* Re-profiles waypoint velocities for stopping at traffic lights
+
+The following variables were defined as tunable values:
+* `LOOKAHEAD_WPS = 100         # waypoints`
+* `LOOP_RATE = 1               # hz`
+* `MAX_SPD = 20.0 * 0.44704    # m/s`
+* `ACCEL = 1.0                 # m/s^2`
+* `DECEL = 1.0                 # m/s^2`
+* `STOP_AHEAD = 2.0            # m`
+
+Summary of functionality:
+On a cyclic basis, the `/final_waypoints` publisher publishes the result of method `get_publish_data()`. `get_publish_data()` only constructs the `lane` object for the publisher, by creating the header and appending it with the data from `get_waypoints()`.  `get_waypoints()` does most of the heavy lifting, first determining the nearest waypoint with `get_nearest_waypoint()`, which finds the nearest waypoint that is ahead, requiring the implementation of `check_waypoint_behind()`.  Once the nearest waypoint is found, the range of indices of the `/base_waypoints` in length of `LOOKAHEAD_WPS`
+
+
 
 ##### b. DBW Node
 
@@ -115,12 +144,6 @@ After the end of 5000 steps, the training process resulted in training accuracy 
 
 
 The above shows that in the simulator images, Yellow was mostly picked as Red which is safer option. To speed up the inference process, model was loaded only once during when TLClassifier object was created. In case the inference was giving probability of less than 50% on any image then that detection was not considered as good and defaulted to red light detection for a safer option.
-
-
-
-##### f. Waypoint Updater (full)
-
-ToDo
 
 
 #### 2. Results
