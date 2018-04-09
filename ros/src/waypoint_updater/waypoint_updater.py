@@ -28,7 +28,7 @@ LOOP_RATE = 1               # hz
 MAX_SPD = 20.0 * 0.44704    # m/s
 ACCEL = 1.0                 # m/s^2
 DECEL = 1.0                 # m/s^2
-STOP_AHEAD = 5.0            # m - Not in use
+STOP_AHEAD = 2.0            # m
 
 dl = lambda a, b: math.sqrt((a.x-b.x)**2 + (a.y-b.y)**2  + (a.z-b.z)**2)
 
@@ -79,8 +79,17 @@ class WaypointUpdater(object):
         self.base_waypoints = waypoints.waypoints
 
     def traffic_cb(self, msg):
-        # Update member
-        self.traffic_waypoint = msg.data
+        # Handle invalid waypoint
+        if msg.data < 0:
+            self.traffic_waypoint = msg.data
+        else:
+            # Valid waypoint, Calculate offset
+            stp_ahd = int(STOP_AHEAD / 0.88) # 0.88 m is average spacing of waypoints
+            # Update member
+            if msg.data >= stp_ahd:
+                self.traffic_waypoint = msg.data - stp_ahd
+            else:
+                self.traffic_waypoint = len(self.base_waypoints) + msg.data - stp_ahd
 
     def velocity_cb(self, msg):
         # Update member
