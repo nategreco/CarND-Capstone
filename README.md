@@ -101,9 +101,20 @@ This ROS node publishes topics for brake control, steering, and throttle:
 
 The control data is provided by the twist controller at a cycle rate of 50 per second. If dbw_enabled, the car/simulator will take the control data and operate the vehicle
 
+view implementation details in dbw_node.py source file
+
 ##### c. Twist Controller
 
-ToDo
+The twist_controller is responsible for taking the vehicles current velocity along with twist_cmd data that contains linear velocity in the x direction and angular information in z axis. Data from twist_cmd's provide the target state. The main components of the twist_controller is:
+
+`Yaw Controller`            -- provides steering control value
+`PID Controller`            -- provides throttle control value
+`LP Filter for steering`    -- dampen jitter on incoming velocity data
+`LP Filter for throttle`    -- dampen jitter on out going steering data
+
+The twist_controller is called a running rate of 50 time per second
+
+view implementation details in twist_controller.py source file 
 
 ##### d. Traffic Light Detector
 
