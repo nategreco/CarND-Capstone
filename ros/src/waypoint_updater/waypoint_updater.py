@@ -25,9 +25,6 @@ TODO (for Yousuf and Aaron): Stopline location for each traffic light.
 
 LOOKAHEAD_WPS = 100         # waypoints
 LOOP_RATE = 1               # hz
-MAX_SPD = 20.0 * 0.44704    # m/s
-ACCEL = 1.0                 # m/s^2
-DECEL = 1.0                 # m/s^2
 STOP_AHEAD = 3.0            # m
 
 dl = lambda a, b: math.sqrt((a.x-b.x)**2 + (a.y-b.y)**2  + (a.z-b.z)**2)
@@ -57,6 +54,9 @@ class WaypointUpdater(object):
         # Other member variables
         self.current_velocity = None
         self.waypoints = None
+        self.trgt_spd = 0.277778 * rospy.get_param('~/waypoint_loader/velocity', 40.0)
+        self.decel = abs(rospy.get_param('~/twist_controller/decel_limit', 1))
+        self.accel = rospy.get_param('~/twist_controller/accel_limit', 1)
         rate = rospy.Rate(LOOP_RATE)
         start_time = 0
 
@@ -154,13 +154,12 @@ class WaypointUpdater(object):
                 vel = trgt
         
         # Apply universal limits and return
-        return max(min(vel,MAX_SPD),0)
+        return max(min(vel,self.trgt_spd),0)
         
         
     def get_waypoints(self):
         # Get waypoints in lookahead distance
         idx1 = self.get_nearest_waypoint(self.current_pose, self.base_waypoints)
-        # rospy.logwarn("Nearest waypoint: " + str(idx1))
         idx2 = idx1 + LOOKAHEAD_WPS - 1
         indices = None
         # Check for wrap around
@@ -177,10 +176,10 @@ class WaypointUpdater(object):
             ref_vel_idx = self.get_nearest_waypoint(self.current_pose, self.waypoints)
             if ref_vel_idx:
                 vel = self.get_waypoint_velocity(self.waypoints[ref_vel_idx])
-            vel = self.get_new_vel(MAX_SPD, vel, dl(self.waypoints[ref_vel_idx].pose.pose.position, self.current_pose.position), ACCEL, DECEL)
+            vel = self.get_new_vel(self.trgt_spd, vel, dl(self.waypoints[ref_vel_idx].pose.pose.position, self.current_pose.position), self.accel, self.decel)
         self.set_waypoint_velocity(wps, 0, vel)
         for i in range(0, len(wps) - 1):
-            vel = self.get_new_vel(MAX_SPD, vel, self.distance(wps, i, i + 1), ACCEL, DECEL)
+            vel = self.get_new_vel(self.trgt_spd, vel, self.distance(wps, i, i + 1), self.accel, self.decel)
             self.set_waypoint_velocity(wps, i + 1, vel)
         
         # Now check if we should stop for a traffic light
@@ -191,7 +190,7 @@ class WaypointUpdater(object):
             for i in range(0, len(wps) - 1):
                 # Check for stop trigger
                 light_dist = dl(wps[i].pose.pose.position, self.base_waypoints[self.traffic_waypoint].pose.pose.position)
-                stop_dist = (vel * vel) / (2 * DECEL) # Kinematic eq - Vf^2 = Vi^2 + 2*a*d
+                stop_dist = (vel * vel) / (2 * self.decel) # Kinematic eq - Vf^2 = Vi^2 + 2*a*d
                 if (light_dist <= stop_dist) or (light_dist < 1):
                     stop_pt = True
                 # Handle stop trigger
@@ -203,9 +202,6 @@ class WaypointUpdater(object):
                     new_decel = (vel * vel) / (2 * light_dist) # Calculate decel needed to make the light
                     vel = self.get_new_vel(0, vel, self.distance(wps, i, i + 1), 0, new_decel)
                     self.set_waypoint_velocity(wps, i, vel)
-        
-        # for i in range(0, 10): # len(wps)):
-        #    rospy.logwarn("Waypoint " + str(i) + " speed is: " + str(self.get_waypoint_velocity(wps[i])))
 
         # Return waypoints
         return wps
