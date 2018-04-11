@@ -9,8 +9,8 @@
 | Name                 | Email                            | Slack Handle     | Node             |
 |:--------------------:|:--------------------------------:|:----------------:|:----------------:|
 | Nathan Greco         | nathan.greco@gmail.com           | @nategreco       | waypoint_updater |
-| Charles Faivre       | chuck@ratsnestinc.com            | @cpfaivre        | dbw_node         |
-| John Novotny         | john.novotny@gmail.com           | @jnovotny        | twist_controler  |
+| Charles Faivre       | chuck@ratsnestinc.com            | @cpfaivre        | dbw_node, twist_controller        |
+| John Novotny         | john.novotny@gmail.com           | @jnovotny        | system integration                 |
 | Mohamed Hussien      | eng.mohamedhussien1991@gmail.com | @mohamed_hussien | tl_detector      |
 | Virendra Kumar Anand | vkanand1976@gmail.com            | @vkanand         | tl_classifier    |
 
@@ -29,6 +29,9 @@ The goals / steps of this project are the following:
 [image1]: ./imgs/WaypointEq1.png "Kinematic Equation"
 [image2]: ./imgs/WaypointEq2.png "Rearranged for stopping distance"
 [image3]: ./imgs/WaypointEq3.png "Rearranged for profiling velocity"
+[video1]: ./start_snippet.mp4 "Start to green light"
+[video2]: ./stop_snippet.mp4 "Stop at red light"
+[video3]: ./loop_sim.mp4  "Full Car loop in simulator"
 
 ---
 
@@ -62,7 +65,7 @@ The following variables were defined as tunable values:
 * `MAX_SPD = 20.0 * 0.44704    # m/s`
 * `ACCEL = 1.0                 # m/s^2`
 * `DECEL = 1.0                 # m/s^2`
-* `STOP_AHEAD = 2.0            # m`
+* `STOP_AHEAD = 3.0            # m`
 
 Summary of functionality:
 On a cyclic basis of `LOOP_RATE`, the `/final_waypoints` publisher publishes the result of method `get_publish_data()`. `get_publish_data()` only constructs the `lane` object for the publisher, by creating the header and appending it with the data from `get_waypoints()`.  `get_waypoints()` does most of the heavy lifting, first determining the nearest waypoint with `get_nearest_waypoint()`, which finds the nearest waypoint that is ahead, requiring the implementation of `check_waypoint_behind()`.  Once the nearest waypoint is found, the range of indices of the `/base_waypoints` that span the length of `LOOKAHEAD_WPS` is copied to the `wps` object, however no velocity profiling is done.  Also here, special care is taken in the edge case where the lookahead points span across the last and first waypoint.
@@ -162,7 +165,20 @@ After the end of 5000 steps, the training process resulted in training accuracy 
 
 The above shows that in the simulator images, Yellow was mostly picked as Red which is safer option. To speed up the inference process, model was loaded only once during when TLClassifier object was created. In case the inference was giving probability of less than 50% on any image then that detection was not considered as good and defaulted to red light detection for a safer option.
 
+The light classifier runs in less than 30ms on a GTX 1070 Nvidia GPU.
 
 #### 2. Results
 
-ToDo
+The following three videos show two snippets from simulation results.  The first video shows the start of the car start and the subsequent 
+stop at the first light, then subsequently the car proceeding when it sees a green light.
+
+[![Start of simulation](./vids/start_snippet.jpeg)](https://drive.google.com/open?id=1RbAnpUF0_rCU4hWJBBAXzBkMi7fibdEH)
+
+The next video shows our car making a full stop at a red light from a starting point of it's steady state speed (20 mph).
+
+[![Stop at red light](./vids/stop_snippet.jpeg)](https://drive.google.com/open?id=1KTtfZC4Ie8hDWqCe2XReORcH03S7nll8)
+
+Finally we have included a video of the complete first loop around the track.  Which shows our end to end performace on the simulation loop.
+
+[![Full Car loop in simulator](./vids/loop_sim.jpeg)](https://drive.google.com/open?id=1GKf3UUUBhYy_Iv0R9X7xzUDrkrpkokpY)
+

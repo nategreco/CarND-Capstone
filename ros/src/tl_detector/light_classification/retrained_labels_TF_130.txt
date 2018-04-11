@@ -1,4 +1,3 @@
 green
-off
 red
 yellow
