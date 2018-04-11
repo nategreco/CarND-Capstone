@@ -44,7 +44,7 @@ The goals / steps of this project are the following:
 The waypoint updater was completed in two parts.  An initial partial implementation was completed so that other nodes could begin development, then later in the project a full implementation was done.
 
 The partial implementation accomplishes the following:
-* Implements the following subscribers(s) 
+* Implements the following subscribers(s)
   * `/current_pose` with callback `pose_cb()`
   * `/base_waypoints` with `waypoints_cb()`
   * `/traffic_waypoint` with `traffic_cb()`
@@ -87,8 +87,19 @@ This would provide the proper constant decel profiling we wanted over the distan
 
 
 ##### b. DBW Node
+DBWNode is a ROS node that is responsible for taking twist_cmd data published from the Waypoint Follower ROS node, and information from the car/simulator from ROS topics:
 
-ToDo
+`/twist_cmd`          -- twist command stream from Waypoint Follower
+`/current_velocity`   -- current velocity of the vehicle
+`/dbw_enabled`        -- drive by wire system enabled
+
+This ROS node publishes topics for brake control, steering, and throttle:
+
+`/vehicle/steering_cmd`   -- steering control to vehicle
+`/vehicle/throttle_cmd`   -- throttle control to vehicle
+`/vehicle/brake_cmd`      -- brake control to vehicle in N*m
+
+The control data is provided by the twist controller at a cycle rate of 50 per second. If dbw_enabled, the car/simulator will take the control data and operate the vehicle
 
 ##### c. Twist Controller
 
@@ -139,7 +150,7 @@ Here are some results of the detection model:<br>
 
 Traffic Light Classifier
 
-Traffic light classifier is responsible for classifying the passed images as Red, Green or Yellow state of traffic light. Traffic light detector module detects an object as traffic light and saves the image of detected traffic light. It calls Traffic light classifier and passes the image of detected traffic light and gets back a label corresponding to the color state of the traffic light. Traffic light is a re-trained Inception classifier on the traffic light images extracted from Bosch Small Traffic Lights Dataset. Different size and brightness images were used for the training. Also some of the images were little angled. The inception classifier as explained in below github has been used for 5000 steps. 
+Traffic light classifier is responsible for classifying the passed images as Red, Green or Yellow state of traffic light. Traffic light detector module detects an object as traffic light and saves the image of detected traffic light. It calls Traffic light classifier and passes the image of detected traffic light and gets back a label corresponding to the color state of the traffic light. Traffic light is a re-trained Inception classifier on the traffic light images extracted from Bosch Small Traffic Lights Dataset. Different size and brightness images were used for the training. Also some of the images were little angled. The inception classifier as explained in below github has been used for 5000 steps.
 
  https://github.com/llSourcell/tensorflow_image_classifier
 
@@ -169,7 +180,7 @@ The light classifier runs in less than 30ms on a GTX 1070 Nvidia GPU.
 
 #### 2. Results
 
-The following three videos show two snippets from simulation results.  The first video shows the start of the car start and the subsequent 
+The following three videos show two snippets from simulation results.  The first video shows the start of the car start and the subsequent
 stop at the first light, then subsequently the car proceeding when it sees a green light.
 
 [![Start of simulation](./vids/start_snippet.jpeg)](https://drive.google.com/open?id=1RbAnpUF0_rCU4hWJBBAXzBkMi7fibdEH)
@@ -181,4 +192,3 @@ The next video shows our car making a full stop at a red light from a starting p
 Finally we have included a video of the complete first loop around the track.  Which shows our end to end performace on the simulation loop.
 
 [![Full Car loop in simulator](./vids/loop_sim.jpeg)](https://drive.google.com/open?id=1GKf3UUUBhYy_Iv0R9X7xzUDrkrpkokpY)
-
