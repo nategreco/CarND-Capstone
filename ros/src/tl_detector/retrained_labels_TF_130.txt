@@ -1,1 +1,3 @@
-light_classification/retrained_labels_TF_130.txt
+green
+red
+yellow
