@@ -33,7 +33,7 @@ class Controller(object):
         self.pid = PID(
             kp=0.3,                  # kp is proportional term
             ki=0.1,                  # ki is integral term
-            kd=0.,                 # kd is derivative term
+            kd=0.0,                 # kd is derivative term
             mn = self.vp.decel_limit,     # min
             mx = self.vp.accel_limit      # max
         )
@@ -84,7 +84,7 @@ class Controller(object):
 
         if linear_vel == 0. and current_vel < .1:
             throttle_control = 0.
-            brake_control = 400 #N*m - to hold car if stopped
+            brake_control = 2000 #N*m - to hold car if stopped
 
         elif throttle_control < 0.1 and vel_error < 0:
             throttle_control = 0.

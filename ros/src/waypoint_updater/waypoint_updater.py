@@ -25,7 +25,7 @@ TODO (for Yousuf and Aaron): Stopline location for each traffic light.
 
 LOOKAHEAD_WPS = 100         # waypoints
 LOOP_RATE = 1               # hz
-STOP_AHEAD = 3.0            # m
+STOP_AHEAD = 4.0            # m
 
 dl = lambda a, b: math.sqrt((a.x-b.x)**2 + (a.y-b.y)**2  + (a.z-b.z)**2)
 
